@@ -1,9 +1,7 @@
-from dotenv import load_dotenv
 import os
-import requests
+from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from spotipy_random import get_random
 
 
 load_dotenv()
@@ -12,47 +10,54 @@ spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 spotify_client = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
     client_id=spotify_client_id,
     client_secret=spotify_client_secret))
-lastfm_api_key = os.getenv("LASTFM_CLIENT_ID")
 
 album_id_list = []
-
-load_dotenv()
 
 with open("albumlist.txt", 'r') as album_id_text:
     album_id_list = [line.strip() for line in album_id_text]
 
-def print_album_info():
+def create_album_info_dict(album_id_list):
+    album_info = {}
     for id in album_id_list:
         album_details = spotify_client.album(id)
         tracklist_details = spotify_client.album_tracks(id)
 
-        # print album cover url
+        # album detail variable assignments
         album_cover_url = album_details['images'][0]['url']
-        print(f"Album cover url: {album_cover_url}")
-
-        # print album name
         album_name = album_details['name']
-        print(f"Album: {album_name}")
-
-        # print artist names
-        artist_name = album_details['artists']
-        for artist in artist_name:
-            print(f"Artist: {artist['name']}")
-
-        # print tracklist
-        tracklist = tracklist_details['items']
-        for track in tracklist:
-            print(f"Track {track['track_number']}: {track['name']}")
-
-        # print total tracks
+        artist_names = [artist['name'] for artist in album_details['artists']]
+        tracklist = [track['name'] for track in tracklist_details['items']]
         total_tracks = tracklist_details['total']
-        print(f"Total tracks: {total_tracks}")
-
-        # print release date
         release_date = album_details['release_date']
-        print(f"Release date: {release_date}")
 
+        album_info[id] = {
+            "album_cover_url": album_cover_url,
+            "album_name": album_name,
+            "artist_names": artist_names,
+            "tracklist": tracklist,
+            "total_tracks": total_tracks,
+            "release_date": release_date
+        }
 
-print_album_info()
+    return album_info
 
+album_info_dict = create_album_info_dict(album_id_list)
 
+# debug function
+def print_filtered_list():
+    for id, info in album_info_dict.items():
+        print(f"Album ID: {id}")
+        for key, value in info.items():
+            if key == 'artist_name':
+                print(f" {key}:")
+                for artist in value:
+                    print(f"    - {artist}")
+            elif key == 'tracklist':
+                print(f" {key}:")
+                for track in value:
+                    print(f"    - {track}")
+            else:
+                print(f" {key}: {value}")
+        print()
+
+print_filtered_list()
