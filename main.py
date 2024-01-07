@@ -14,25 +14,45 @@ spotify_client = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
     client_secret=spotify_client_secret))
 lastfm_api_key = os.getenv("LASTFM_CLIENT_ID")
 
-def get_album_list_by_genre(genre):
-    url = "http://ws.audioscrobbler.com/2.0/"
-    parameters = {
-        "method": "tag.gettopalbums",
-        "tag": genre,
-        "api_key": lastfm_api_key,
-        "format": "json"
-    }
+album_id_list = []
 
-    response = requests.get(url, params=parameters)
-    jsondict = response.json()
-    return jsondict['albums']['album']
+load_dotenv()
+
+with open("albumlist.txt", 'r') as album_id_text:
+    album_id_list = [line.strip() for line in album_id_text]
+
+def print_album_info():
+    for id in album_id_list:
+        album_details = spotify_client.album(id)
+        tracklist_details = spotify_client.album_tracks(id)
+
+        # print album cover url
+        album_cover_url = album_details['images'][0]['url']
+        print(f"Album cover url: {album_cover_url}")
+
+        # print album name
+        album_name = album_details['name']
+        print(f"Album: {album_name}")
+
+        # print artist names
+        artist_name = album_details['artists']
+        for artist in artist_name:
+            print(f"Artist: {artist['name']}")
+
+        # print tracklist
+        tracklist = tracklist_details['items']
+        for track in tracklist:
+            print(f"Track {track['track_number']}: {track['name']}")
+
+        # print total tracks
+        total_tracks = tracklist_details['total']
+        print(f"Total tracks: {total_tracks}")
+
+        # print release date
+        release_date = album_details['release_date']
+        print(f"Release date: {release_date}")
 
 
-hiphopalbumjson = get_album_list_by_genre("hip-hop")
-hiphopalbumlist = []
-for album in hiphopalbumjson:
-    album_name = album['name']
-    hiphopalbumlist.append(album_name)
+print_album_info()
 
-for i in hiphopalbumlist:
-    print(i)
+
